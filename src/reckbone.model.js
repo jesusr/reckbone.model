@@ -3,10 +3,9 @@ import _ from 'overscore';
 
 export default class Model {
   constructor(attributes = {}, options = {}, Reckbone = {}) {
-    _.extend(this, Reckbone.Events);
     let attrs = attributes,
       defaults;
-    _.extend(this, {
+    _.extend(this, Reckbone.Events, {
       validationError: null,
       idAttribute: 'id',
       cidPrefix: 'c',
@@ -26,25 +25,22 @@ export default class Model {
   preinitialize() {
     // to be overwritten in derivated classes
   }
-
   initialize() {
     // to be overwritten in derivated classes
   }
-
   get(attr) {
     return attr ? this.attributes[attr] : Object.assign({}, this.attributes);
   }
-
   set(key, val, options) {
     if (!key) return this;
-    let preset = _preSet.call(key, val),
+    let preset = _preSet.call(this, key, val),
       changes = [],
       changing = this._changing,
       current;
     if (!preset) return false;
     this._changing = true;
-    if (!changing) _.extend(this, {
-      _previousAttributes: Object.assign({}, this.attributes),
+    if (!changing && _.isUndefined(changing)) _.extend(this, {
+      _previousAttributes: Object.assign({}, this.attributes || {}),
       changed: {}
     });
     current = this.attributes;
@@ -73,13 +69,11 @@ export default class Model {
     this._changing = false;
     return this;
   }
-
   unset(attr, options) {
     return this.set(attr, void 0, _.extend({}, options, {
       unset: true
     }));
   }
-
   clear(options) {
     let attrs = {};
     for (let key in this.attributes) attrs[key] = void 0;
@@ -87,12 +81,10 @@ export default class Model {
       unset: true
     }));
   }
-
   previous(attr = null) {
     return (attr && this._previousAttributes) ? this._previousAttributes[attr] :
       (this._previousAttributes) ? this._previousAttributes : null;
   }
-
   destroy(options) {
     options = options ? Object.assign({}, options) : {};
     let model = this,
@@ -101,24 +93,20 @@ export default class Model {
         model.stopListening();
         model.trigger('destroy:model', model, model.collection, options);
       };
-
     options.success = function (resp) {
       if (options.wait) destroy();
       if (options.success) options.success.call(options.context, model, resp, options);
     };
-
     if (_isNew.call(this)) {
       _.defer(options.success);
     }
     if (!options.wait) destroy();
     return xhr;
   }
-
   parse(resp) {
     // to be overwritten in derivated classes
     return resp;
   }
-
   clone() {
     return new this.constructor(this.attributes);
   }

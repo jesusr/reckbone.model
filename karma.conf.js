@@ -46,7 +46,7 @@ module.exports = function (config) {
             plugins: [
               ['transform-es2015-classes', {
                 'loose': true
-              }]
+              }], 'transform-object-assign'
             ]
           }
         }, {

@@ -170,9 +170,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /* jshint -W089*/
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }(); /* jshint -W089*/
 
 
 var _overscore = __webpack_require__(3);
@@ -183,28 +185,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _preSet(key, val) {
-  var options = void 0,
-      attrs = void 0;
-  (typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object' ? (attrs = key) && (options = val) : (attrs = {})[key] = val;
-  options || (options = {});
-  return _validate.call(this, attrs, options) ? {
-    attrs: attrs,
-    options: options
-  } : false;
-}
-
-function _validate(attrs, options) {
-  var error = void 0;
-  if (!options.validate || !this.validate) return true;
-  attrs = _overscore2.default.extend({}, this.attributes, attrs);
-  if (!(error = this.validationError = this.validate(attrs, options) || null)) return true;
-  if (this.trigger) this.trigger('invalid', this, error, _overscore2.default.extend(options, {
-    validationError: error
-  }));
-  return false;
-}
-
 var Model = function () {
   function Model() {
     var attributes = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
@@ -213,10 +193,9 @@ var Model = function () {
 
     _classCallCheck(this, Model);
 
-    _overscore2.default.extend(this, Reckbone.Events);
     var attrs = attributes,
         defaults = void 0;
-    _overscore2.default.extend(this, {
+    _overscore2.default.extend(this, Reckbone.Events, {
       validationError: null,
       idAttribute: 'id',
       cidPrefix: 'c',
@@ -244,42 +223,22 @@ var Model = function () {
       // to be overwritten in derivated classes
     }
   }, {
-    key: 'toJSON',
-    value: function toJSON(options) {
-      return Object.assign({}, this.attributes);
-    }
-  }, {
     key: 'get',
     value: function get(attr) {
-      return this.attributes[attr];
-    }
-  }, {
-    key: 'escape',
-    value: function escape(attr) {
-      return _overscore2.default.escape(this.get(attr));
-    }
-  }, {
-    key: 'has',
-    value: function has(attr) {
-      return !!this.get(attr);
-    }
-  }, {
-    key: 'matches',
-    value: function matches(attrs) {
-      return !!_overscore2.default.iteratee(attrs, this)(this.attributes);
+      return attr ? this.attributes[attr] : _extends({}, this.attributes);
     }
   }, {
     key: 'set',
     value: function set(key, val, options) {
       if (!key) return this;
-      var preset = _preSet.call(key, val),
+      var preset = _preSet.call(this, key, val),
           changes = [],
           changing = this._changing,
           current = void 0;
       if (!preset) return false;
       this._changing = true;
-      if (!changing) _overscore2.default.extend(this, {
-        _previousAttributes: Object.assign({}, this.attributes),
+      if (!changing && _overscore2.default.isUndefined(changing)) _overscore2.default.extend(this, {
+        _previousAttributes: _extends({}, this.attributes || {}),
         changed: {}
       });
       current = this.attributes;
@@ -299,12 +258,10 @@ var Model = function () {
         }
       }
       if (changing) return this;
-      if (!preset.options.silent) {
-        while (this._pending) {
-          options = this._pending;
-          this._pending = false;
-          if (this.trigger) this.trigger('change', this, options);
-        }
+      if (!preset.options.silent) while (this._pending) {
+        options = this._pending;
+        this._pending = false;
+        if (this.trigger) this.trigger('change', this, options);
       }
       this._pending = false;
       this._changing = false;
@@ -328,122 +285,36 @@ var Model = function () {
       }));
     }
   }, {
-    key: 'hasChanged',
-    value: function hasChanged(attr) {
-      return !attr ? !_overscore2.default.isEmpty(this.changed) : _overscore2.default.has(this.changed, attr);
-    }
-  }, {
-    key: 'changedAttributes',
-    value: function changedAttributes(diff) {
-      if (!diff) return this.hasChanged() ? Object.assign({}, this.changed) : false;
-      var old = this._changing ? this._previousAttributes : this.attributes,
-          changed = {},
-          hasChanged = void 0;
-      for (var attr in diff) {
-        if (old[attr] === diff[attr]) continue;
-        changed[attr] = diff[attr];
-        hasChanged = true;
-      }
-      return hasChanged ? changed : false;
-    }
-  }, {
     key: 'previous',
-    value: function previous(attr) {
-      return !attr || !this._previousAttributes ? null : this._previousAttributes[attr];
-    }
-  }, {
-    key: 'previousAttributes',
-    value: function previousAttributes() {
-      return Object.assign({}, this._previousAttributes);
-    }
-  }, {
-    key: 'fetch',
-    value: function fetch(options) {
-      options = _overscore2.default.extend({
-        parse: true
-      }, options);
-      var model = this,
-          success = options.success;
-      options.success = function (resp) {
-        var serverAttrs = options.parse ? model.parse(resp, options) : resp;
-        if (!model.set(serverAttrs, options)) return false;
-        if (success) success.call(options.context, model, resp, options);
-        model.trigger('sync', model, resp, options);
-      };
-      // wrapError(this, options); TODO
-      return this.sync('read', this, options);
-    }
-  }, {
-    key: 'save',
-    value: function save(key, val, options) {
-      var attrs = void 0,
-          method = void 0;
-      !key || (typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object' ? (attrs = key) && (options = val) : (attrs = {})[key] = val;
-      options = _overscore2.default.extend({
-        validate: true,
-        parse: true
-      }, options);
-      if (attrs && !options.wait && (!this.set(attrs, options) || !_validate.call(this, attrs, options))) return false;
-      var model = this,
-          success = options.success,
-          attributes = this.attributes;
-      options.success = function (resp) {
-        model.attributes = attributes;
-        var serverAttrs = options.parse ? model.parse(resp, options) : resp;
-        if (options.wait) serverAttrs = _overscore2.default.extend({}, attrs, serverAttrs);
-        if (serverAttrs && !model.set(serverAttrs, options)) return false;
-        if (success) success.call(options.context, model, resp, options);
-        model.trigger('sync', model, resp, options);
-      };
-      // wrapError(this, options);
-      if (attrs && options.wait) this.attributes = _overscore2.default.extend({}, attributes, attrs);
-      method = this.isNew() ? 'create' : options.patch ? 'patch' : 'update';
-      if (method === 'patch' && !options.attrs) options.attrs = attrs;
-      var xhr = this.sync(method, this, options);
-      this.attributes = attributes;
-      return xhr;
+    value: function previous() {
+      var attr = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      return attr && this._previousAttributes ? this._previousAttributes[attr] : this._previousAttributes ? this._previousAttributes : null;
     }
   }, {
     key: 'destroy',
     value: function destroy(options) {
-      options = options ? Object.assign({}, options) : {};
-      var model = this;
-      var success = options.success;
-      var wait = options.wait;
-
-      var destroy = function destroy() {
+      options = options ? _extends({}, options) : {};
+      var model = this,
+          xhr = false,
+          destroy = function destroy() {
         model.stopListening();
-        model.trigger('destroy', model, model.collection, options);
+        model.trigger('destroy:model', model, model.collection, options);
       };
-
       options.success = function (resp) {
-        if (wait) destroy();
-        if (success) success.call(options.context, model, resp, options);
-        if (!model.isNew()) model.trigger('sync', model, resp, options);
+        if (options.wait) destroy();
+        if (options.success) options.success.call(options.context, model, resp, options);
       };
-
-      var xhr = false;
-      if (this.isNew()) {
+      if (_isNew.call(this)) {
         _overscore2.default.defer(options.success);
-      } else {
-        // wrapError(this, options);
-        xhr = this.sync('delete', this, options);
       }
-      if (!wait) destroy();
+      if (!options.wait) destroy();
       return xhr;
     }
   }, {
-    key: 'url',
-    value: function url() {
-      var base = _overscore2.default.result(this, 'urlRoot') || _overscore2.default.result(this.collection, 'url'); // ||
-      // urlError();
-      if (this.isNew()) return base;
-      var id = this.get(this.idAttribute);
-      return base.replace(/[^\/]$/, '$&/') + encodeURIComponent(id);
-    }
-  }, {
     key: 'parse',
-    value: function parse(resp, options) {
+    value: function parse(resp) {
+      // to be overwritten in derivated classes
       return resp;
     }
   }, {
@@ -451,24 +322,39 @@ var Model = function () {
     value: function clone() {
       return new this.constructor(this.attributes);
     }
-  }, {
-    key: 'isNew',
-    value: function isNew() {
-      return !this.has(this.idAttribute);
-    }
-  }, {
-    key: 'isValid',
-    value: function isValid(options) {
-      return _validate.call(this, {}, _overscore2.default.extend({}, options, {
-        validate: true
-      }));
-    }
   }]);
 
   return Model;
 }();
 
 exports.default = Model;
+
+
+function _preSet(key, val) {
+  var options = void 0,
+      attrs = void 0;
+  (typeof key === 'undefined' ? 'undefined' : _typeof(key)) === 'object' ? (attrs = key) && (options = val) : (attrs = {})[key] = val;
+  options || (options = {});
+  return _validate.call(this, attrs, options) ? {
+    attrs: attrs,
+    options: options
+  } : false;
+}
+
+function _validate(attrs, options) {
+  var error = void 0;
+  if (!options.validate || !this.validate) return true;
+  attrs = _overscore2.default.extend({}, this.attributes, attrs);
+  if (!(error = this.validationError = this.validate(attrs, options) || null)) return true;
+  if (this.trigger) this.trigger('invalid', this, error, _overscore2.default.extend(options, {
+    validationError: error
+  }));
+  return false;
+}
+
+function _isNew() {
+  return !this.has(this.idAttribute);
+}
 
 /***/ }),
 /* 3 */
