@@ -1,25 +1,23 @@
-/* jshint -W089*/
 import _ from 'overscore';
 
 export default class Model {
   constructor(attributes = {}, options = {}, Reckbone = {}) {
-    let attrs = attributes,
-      defaults;
+    let defaults;
     _.extend(this, Reckbone.Events, {
       validationError: null,
       idAttribute: 'id',
       cidPrefix: 'c',
-      attributes: {},
+      attributes,
       changed: {},
       cid: 'c-' + new Date().getTime()
     });
     this.preinitialize.apply(this, arguments);
-    if (options.collection) this.collection = options.collection;
-    if (options.parse) attrs = this.parse(attrs, options) || {};
-    else attrs = attributes;
+    this.collection = options.collection;
+    if (options.parse) attributes = this.parse(attributes, options) || {};
+    else attributes = attributes;
     defaults = _.result(this, 'defaults');
-    attrs = _.defaults(_.extend({}, defaults, attrs), defaults);
-    this.set(attrs, options);
+    attributes = _.defaults(_.extend({}, defaults, attributes), defaults);
+    this.set(attributes, options);
     this.initialize.apply(this, arguments);
   }
   preinitialize() {
