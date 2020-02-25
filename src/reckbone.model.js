@@ -14,7 +14,6 @@ export default class Model {
     this.preinitialize.apply(this, arguments);
     this.collection = options.collection;
     if (options.parse) attributes = this.parse(attributes, options) || {};
-    else attributes = attributes;
     defaults = _.result(this, 'defaults');
     attributes = _.defaults(_.extend({}, defaults, attributes), defaults);
     this.set(attributes, options);
